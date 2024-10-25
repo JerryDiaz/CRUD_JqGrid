@@ -1,0 +1,304 @@
+﻿@model WebApplication3.Models.Producto
+
+@{
+    ViewBag.Title = "Contact";
+}
+
+
+<h2>Listado de Productos</h2>
+
+
+<div class="d-flex justify-content-end">
+    <button class="btn btn-primary" id="btnNew" type="button">
+        <i class="zmdi zmdi-plus"></i>Agregar
+    </button>
+</div>
+
+
+<table class="data-table" id="grid"></table>
+<div id="pager"></div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-end">
+            <button class="btn btn-warning m-1" type="button" id="btnUpdate" disabled="disabled"> <i class="fa fa-magic"></i>&nbsp;Modificar</button>
+            <button class="btn btn-danger m-1" type="button" id="btnDelete" disabled="disabled"> <i class="fa fa-ban"></i>&nbsp;Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<!-- modal medium -->
+@Html.AntiForgeryToken()
+@using (Html.BeginForm("AddProducto", "Home", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+{
+    <div class="modal fade" id="mediumModal" tabindex="-1" role="dialog" aria-labelledby="mediumModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mediumModalLabel">Guardar Información</h5>                  
+                </div>
+              
+                <div class="modal-body">
+                    @Html.ValidationSummary("", new { @class = "text-danger" })
+                    <input id="Action" name="Action" type="hidden" value="" />
+                    <div class="card-body card-block">
+                        <form action="" method="post" class="" id="AcademicAreaForm">
+                            <input id="Id" name="Id" type="hidden" value="">
+                            <div class="form-group">
+                                <label for="nf-email" class=" form-control-label">Descripción</label>
+                                @Html.TextBoxFor(m => m.Description, new { @class = "form-control", @placeholder = "Descripción" })
+                            </div>
+                            <div class="form-group">
+                                <label for="nf-email" class=" form-control-label">Codigo</label>
+                                @Html.TextBoxFor(m => m.CategoryCode, new { @class = "form-control", @placeholder = "00" })
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="btnCancel">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSave">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<!-- end modal medium -->
+<!-- modal static -->
+<div class="modal fade" id="staticModal" tabindex="-1" role="dialog" aria-labelledby="staticModalLabel" aria-hidden="true"
+     data-backdrop="static">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticModalLabel">Eliminar información</h5>
+                
+            </div>
+            <div class="modal-body">
+                <p>
+                    Esta seguro de querer eliminar este registro.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnCancel2" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmDelete">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        let req = {};
+        let _id = "";
+
+        $("#btnNew").click(function () {
+            $("#mediumModalLabel").text('Agregar Información');
+            //Clean();
+            //StateButtonDeleteUpdate(false);
+            $("#Action").val('Add');
+            OpenModal();
+        });
+
+        $("#btnUpdate").click(function () {
+            $("#mediumModalLabel").text('Actualizar Información');
+            $("#Action").val('Update');
+            OpenModal();
+        });
+
+         $("#btnSave").click(function () {
+
+         req = {};
+         req.Id = $("#Id").val();
+         req.Description = $("#Description").val();
+         req.CategoryCode = $("#CategoryCode").val();
+         req.User = ''
+
+     if (req.Description == '') {
+         alert('El campo Descripción es requerido');
+         return false;
+     }
+
+             if (req.CategoryCode == '') {
+          alert('El campo Descripción es requerido');
+         return false;
+     }
+
+
+
+     var successMethod = function(data, textStatus, jqXHR) {
+         if (jqXHR.statusCode().status == 200) //Redirect
+         {
+             let title = ''
+             if ($("#Action").val() == "Add") {
+                 title = 'Registro exitoso';
+             } else {
+                 title = 'Actualización exitosa';
+             }
+             alert('Registro exitoso');
+
+             //Swal.fire({
+             //    icon: 'success',
+             //    title: title,
+             //    showConfirmButton: false,
+             //    timer: 3000
+             //});
+         }
+         else if (jqXHR.statusCode().status == 202) //Message
+         {
+             //Swal.fire({
+             //    icon: 'error',
+             //    title: 'Ocurrio un error',
+             //    showConfirmButton: false,
+             //    timer: 3000
+             //});
+
+             alert('Ocurrio un error');
+         }
+
+         $('#grid').trigger("reloadGrid");
+         StateButtonDeleteUpdate(false);
+         CloseModal();
+         Clean();
+     }
+     if ($("#Action").val() == "Add") {
+         $.ajax({
+             url: '@Url.Action("AddProducto", "Home")',
+             type: 'POST',
+             data:req,
+             success: successMethod
+         });
+     }
+     else if ($("#Action").val() == "Update") {
+         $.ajax({
+             url: '@Url.Action("EditProducto", "Home")',
+             type: 'POST',
+             data:req,
+             success: successMethod
+         });
+     }
+
+         });
+
+          $("#btnConfirmDelete").click(function () {
+
+     req = {};
+     req.Id = $("#Id").val();
+
+     var successMethod = function(data, textStatus, jqXHR) {
+         if (jqXHR.statusCode().status == 200) //Redirect
+         {
+             alert('Registro exitoso');
+
+             //Swal.fire({
+             //    icon: 'success',
+             //    title: 'Se eliminó el registro',
+             //    showConfirmButton: false,
+             //    timer: 3000
+             //});
+         }
+         else if (jqXHR.statusCode().status == 202) //Message
+         {
+             //Swal.fire({
+             //    icon: 'error',
+             //    title: 'Ocurrio un error',
+             //    showConfirmButton: false,
+             //    timer: 3000
+             //});
+             alert('Ocurrio un error');
+         }
+
+         $('#grid').trigger("reloadGrid");
+         StateButtonDeleteUpdate(false);
+         CloseModalDelete();
+         Clean();
+     }
+
+      $.ajax({
+             url: '@Url.Action("DeleteProducto", "Home")',
+             type: 'POST',
+             data:req,
+             success: successMethod
+      });
+
+          });
+
+        $("#btnCancel").click(function () {
+            CloseModal();
+        });
+
+        $("#btnCancel2").click(function () {
+            CloseModalDelete();
+        });
+
+        $("#btnDelete").click(function () {
+            OpenModalDelete();
+        });
+
+        $("#grid").jqGrid({
+            url: '@Url.Action("ListContact", "Home")',
+            datatype: "json",
+            mtype: "GET",
+            colNames: ["Id", "Descripcion", "Codigo"],
+            colModel: [
+                { name: "Id", index: "Id", width: 50, editable: false, hidden: true },
+                { name: "Description", index: "Description", width: 200, sortable: true },
+                { name: "CategoryCode", index: "CategoryCode", width: 200, sortable: true },
+                //{ name: "Precio", index: "Precio", width: 100, align: "right", sortable: true, formatter: "currency", formatoptions: { decimalSeparator: ".", thousandsSeparator: ",", decimalPlaces: 2, prefix: "$" } }
+            ],
+            pager: jQuery("#Pager"),
+            rowNum: 10,
+            rowList: [10, 20, 30],
+            sortname: "Id",
+            sortorder: "asc",
+            viewrecords: true,
+            height: "auto",
+            caption: "",
+            autowidth: true,
+            rowList: [5, 10, 15],
+            jsonReader: { root: "rows", page: 'page', total: 'total', records: 'records', repeatitems: false, Id: 0 },
+            onSelectRow: function (id) {
+                data = $(this).jqGrid("getRowData", id);
+                console.log(data);
+                console.log(data.Description);
+                $('#Id').val(data.Id);
+                $('#Description').val(data.Description);
+                $('#CategoryCode').val(data.CategoryCode);
+                StateButtonDeleteUpdate(true);
+            }
+        }).navGrid("#Pager", { edit: false, add: false, del: false, refresh: true, search: false }, {}, {}, {});
+
+    });
+
+    function Clean() {
+        $("#Description").val('');
+    }
+
+    function CloseModal() {
+        $("#mediumModal").modal('hide');
+    }
+
+    function OpenModal() {
+        $("#mediumModal").modal('show');
+    }
+
+    function OpenModalDelete() {
+        $("#staticModal").modal('show');
+    }
+
+    function CloseModalDelete() {
+        $("#staticModal").modal('hide');
+    }
+
+    function StateButtonDeleteUpdate(enable) {
+        if (enable) {
+            $("#btnUpdate").removeAttr('disabled');
+            $("#btnDelete").removeAttr('disabled');
+        }
+        else {
+            $("#btnUpdate").attr('disabled', 'disabled');
+            $("#btnDelete").attr('disabled', 'disabled');
+        }
+    }
+
+
+</script>
