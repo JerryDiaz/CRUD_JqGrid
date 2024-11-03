@@ -12,7 +12,7 @@ namespace WebApplication3
 {
     public class ConnectionDB : IDisposable
     {
-        private static string cnDB = "Data Source=4.157.217.223\\DEV,65379;User ID=julio.barquero;Password=Force2024*;Initial Catalog=CF_COMMERCE; Persist Security Info=True;Pooling=true;Min Pool Size=30;Max Pool Size=150; Connection Timeout=60;Connection Lifetime=30; Application name = store-api;";
+        private static string cnDB = "Data Source=localhost;User ID=julio.barquero;Password=Force2024*;Initial Catalog=CF_COMMERCE; Persist Security Info=True;Pooling=true;Min Pool Size=30;Max Pool Size=150; Connection Timeout=60;Connection Lifetime=30; Application name = store-api;";
 
         public void Dispose()
         {
